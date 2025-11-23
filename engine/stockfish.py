@@ -1,16 +1,61 @@
 import os
-from stockfish import Stockfish
+import platform
+import subprocess
 
-# Stockfish exe faylga path
-STOCKFISH_PATH = os.path.join(os.path.dirname(__file__), "stockfish-windows-x86-64-avx2.exe")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Stockfish obyekti, depth = qanchalik chuqur o‘ylash
-stockfish = Stockfish(path=STOCKFISH_PATH, depth=15)
+def get_stockfish_path():
+    system = platform.system().lower()
 
-def get_ai_move(fen):
-    """
-    berilgan FEN holatidan AI ning eng yaxshi harakatini qaytaradi
-    """
-    stockfish.set_fen_position(fen)
-    return stockfish.get_best_move()
+    # Windows
+    if system == "windows":
+        path = os.path.join(BASE_DIR, "stockfish-windows-x86-64-avx2.exe")
+        if os.path.exists(path):
+            return path
+        else:
+            raise FileNotFoundError("Windows uchun stockfish .exe topilmadi!")
 
+    # Linux (Render)
+    path_linux = os.path.join(BASE_DIR, "stockfish-ubuntu-x86-64-avx2")
+    if os.path.exists(path_linux):
+        return path_linux
+
+    raise FileNotFoundError("Hech qanday stockfish binary topilmadi!")
+
+
+def run_stockfish(commands):
+    engine_path = get_stockfish_path()
+
+    process = subprocess.Popen(
+        engine_path,
+        universal_newlines=True,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        bufsize=1
+    )
+
+    for cmd in commands:
+        process.stdin.write(cmd + "\n")
+        process.stdin.flush()
+
+    process.stdin.write("quit\n")
+    process.stdin.flush()
+
+    output = process.stdout.read()
+    process.kill()
+    return output
+
+
+def get_best_move(fen):
+    commands = [
+        f"position fen {fen}",
+        "go depth 20"
+    ]
+    output = run_stockfish(commands)
+
+    for line in output.split("\n"):
+        if "bestmove" in line:
+            return line.split(" ")[1]
+
+    return None
