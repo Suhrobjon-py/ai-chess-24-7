@@ -1,4 +1,9 @@
+import sys
+import os
 import streamlit as st
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from game.board import ChessBoard
 from engine.commands import get_ai_best_move, set_opening, sacrifice_piece
 
