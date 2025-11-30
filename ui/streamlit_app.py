@@ -5,43 +5,47 @@ import chess
 import chess.svg
 from PIL import Image
 import io
+import cairosvg
 
-# engine va game papkalarni ulash
+# Projectning asosiy papkasini sys.path ga qo‘shish
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from game.board import ChessBoard
-from engine.commands import get_ai_best_move
+from engine.commands import get_ai_best_move, set_opening, sacrifice_piece
 
-st.set_page_config(layout="centered")
-st.title("♟ AI Chess 24/7 - Render")
+st.title("AI Chess 24/7 - Render")
 
-# Board session
+# Yangi board yaratish yoki session_state orqali saqlash
 if "board" not in st.session_state:
     st.session_state.board = ChessBoard()
 
 board = st.session_state.board
 
-# === BOARDNI SVG RASM QILISH ===
-def render_board_svg(chess_board):
-    svg = chess.svg.board(chess_board.board)
-    png = Image.open(io.BytesIO(svg.encode("utf-8")))
-    return png
+# =======================
+# Board vizualizatsiyasi
+# =======================
+def show_board(board):
+    """ chess.Board() ob’ektini oladi va Streamlit’da PNG rasm sifatida chiqaradi """
+    svg_board = chess.svg.board(board=board, size=400)
+    png_board = cairosvg.svg2png(bytestring=svg_board.encode('utf-8'))
+    image = Image.open(io.BytesIO(png_board))
+    st.image(image)
 
-# Vizual board chiqishi
-st.image(render_board_svg(board), use_container_width=True)
+# Boardni ekranga chiqarish
+st.write("Hozirgi board:")
+show_board(board)
 
-# FEN ko‘rsatish
-st.code(board.get_fen(), language="text")
-
-# AI harakat tugmasi
-if st.button("🤖 AI yuradi"):
+# AI eng yaxshi harakat tugmasi
+if st.button("AI eng yaxshi harakatni bajar"):
     fen = board.get_fen()
     move = get_ai_best_move(fen)
     board.push_move(move)
-    st.success(f"AI yurishi: {move}")
-    st.rerun()
+    st.write(f"AI harakati: {move}")
+    st.write("Yangilangan board:")
+    show_board(board)
 
-# RESET tugmasi
-if st.button("♻️ Boardni qayta boshlash"):
+# Boardni reset qilish tugmasi
+if st.button("Boardni reset qilish"):
     board.reset_board()
-    st.rerun()
+    st.write("Board bosh holatga qaytarildi")
+    show_board(board)
