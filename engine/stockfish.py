@@ -1,16 +1,16 @@
-# engine/stockfish.py
 import os
-import stat
+import platform
 from stockfish import Stockfish
 
-# Stockfish binary fayl yo‘li
-STOCKFISH_PATH = os.path.join(os.path.dirname(__file__), "stockfish-ubuntu-x86-64-avx2")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Windows emas bo‘lsa (Linux/Render), faylni executable qilish
-if os.name != "nt":  # Linux muhitida
-    if os.path.exists(STOCKFISH_PATH):
-        st = os.stat(STOCKFISH_PATH)
-        os.chmod(STOCKFISH_PATH, st.st_mode | stat.S_IEXEC)
+if platform.system() == "Windows":
+    STOCKFISH_PATH = os.path.join(BASE_DIR, "stockfish-windows-x86-64-avx2.exe")
+else:
+    STOCKFISH_PATH = os.path.join(BASE_DIR, "stockfish-ubuntu-x86-64-avx2")
 
-# Stockfish obyekti yaratish
 stockfish = Stockfish(path=STOCKFISH_PATH, depth=15)
+
+def get_ai_move(fen):
+    stockfish.set_fen_position(fen)
+    return stockfish.get_best_move()
